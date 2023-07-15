@@ -99,14 +99,22 @@ var SaveCallEventCommand = defineObject(BaseEventCommand,
 		
 		// If getCurrentScene is called with the event command, SceneType.EVENT is returned, so call getBaseScene.
 		screenParam.scene = root.getBaseScene();
-		if (screenParam.scene === SceneType.REST) {
-			screenParam.mapId = root.getSceneController().getNextMapId();
-		}
-		else {
-			screenParam.mapId = root.getCurrentSession().getCurrentMapInfo().getId();
-		}
+		screenParam.mapId = this._getMapId(screenParam.scene);
 		
 		return screenParam;
+	},
+	
+	_getMapId: function(sceneType) {
+		var mapId;
+		
+		if (sceneType === SceneType.REST) {
+			mapId = root.getSceneController().getNextMapId();
+		}
+		else {
+			mapId = root.getCurrentSession().getCurrentMapInfo().getId();
+		}
+		
+		return mapId;
 	}
 }
 );

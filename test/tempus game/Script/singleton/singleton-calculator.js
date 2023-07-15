@@ -335,11 +335,15 @@ var Calculator = {
 			return 1;
 		}
 		
-		activeAgi = AbilityCalculator.getAgility(active, weapon);
+		activeAgi = AbilityCalculator.getAgility(active, weapon) + this.getAgilityPlus(active, passive, weapon);
 		passiveAgi = AbilityCalculator.getAgility(passive, ItemControl.getEquippedWeapon(passive));
 		value = this.getDifference();
 		
 		return (activeAgi - passiveAgi) >= value ? 2 : 1;
+	},
+	
+	getAgilityPlus: function(active, passive, weapon) {
+		return CompatibleCalculator.getAgility(active, passive, weapon);
 	},
 	
 	getDifference: function(unit) {
@@ -499,7 +503,7 @@ var SupportCalculator = {
 		totalStatus.criticalTotal = 0;
 		totalStatus.criticalAvoidTotal = 0;
 		
-		if (this._isStatusDisabled()) {
+		if (unit === null || this._isStatusDisabled()) {
 			return totalStatus;
 		}
 		
@@ -692,8 +696,6 @@ var SupportCalculator = {
 	},
 	
 	_appendGuestList: function(listArray, filter) {
-		var list, count;
-		
 		if (!(filter & UnitFilterFlag.PLAYER)) {
 			return;
 		}
@@ -765,6 +767,16 @@ var CompatibleCalculator = {
 		}
 		
 		return compatible.getCriticalAvoid();
+	},
+	
+	getAgility: function(active, passive, weapon) {
+		var compatible = this._getCompatible(active, passive, weapon);
+		
+		if (compatible === null) {
+			return 0;
+		}
+		
+		return compatible.getAgility();
 	},
 	
 	_getCompatible: function(active, passive, weapon) {

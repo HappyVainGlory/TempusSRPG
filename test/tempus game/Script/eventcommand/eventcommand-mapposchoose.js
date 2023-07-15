@@ -12,6 +12,7 @@ var MapPosChooseEventCommand = defineObject(BaseEventCommand,
 	_isUnitOnlyMode: false,
 	_isQuestionDisplayable: false,
 	_isCancelAllowed: false,
+	_isSelfAllowed: false,
 	
 	enterEventCommandCycle: function() {
 		this._prepareEventCommandMemberData();
@@ -57,7 +58,7 @@ var MapPosChooseEventCommand = defineObject(BaseEventCommand,
 	_prepareEventCommandMemberData: function() {
 		var eventCommandData = root.getEventCommandObject();
 		
-		this._posSelector = createObject(PosSelector);
+		this._posSelector = this._createPosSelector();
 		this._questionWindow = createWindowObject(QuestionWindow, this);
 		this._targetUnit = eventCommandData.getTargetUnit();
 		this._isUnitOnlyMode = eventCommandData.isUnitOnlyMode();
@@ -81,6 +82,18 @@ var MapPosChooseEventCommand = defineObject(BaseEventCommand,
 		this.changeCycleMode(MapPosChooseMode.SELECT);
 		
 		return EnterResult.OK;
+	},
+	
+	_createPosSelector: function() {
+		var posSelector = createObject(PosSelector);
+		
+		this._isSelfAllowed = false;
+		if (root.getEventCommandObject().isSelfAllowed()) {
+			this._isSelfAllowed = true;
+			posSelector.enableSelfSelection();
+		}
+		
+		return posSelector;
 	},
 	
 	_createPositionIndexData: function() {
@@ -347,6 +360,10 @@ var PositionIndexArray = {
 	},
 	
 	_isUnitAllowed: function(piData, targetUnit) {
+		if (root.getEventCommandObject().isSelfAllowed()) {
+			return true;
+		}
+		
 		return piData.targetUnit !== targetUnit;
 	},
 	

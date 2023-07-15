@@ -1,7 +1,7 @@
 
 var IndexArray = {
 	createIndexArray: function(x, y, item) {
-		var i, rangeValue, rangeType, arr;
+		var i, obj, rangeValue, rangeType, arr;
 		var startRange = 1;
 		var endRange = 1;
 		var count = 1;
@@ -15,14 +15,9 @@ var IndexArray = {
 			endRange = item.getEndRange();
 		}
 		else {
-			if (item.getItemType() === ItemType.TELEPORTATION && item.getRangeType() === SelectionRangeType.SELFONLY) {
-				rangeValue = item.getTeleportationInfo().getRangeValue();
-				rangeType = item.getTeleportationInfo().getRangeType();
-			}
-			else {
-				rangeValue = item.getRangeValue();
-				rangeType = item.getRangeType();
-			}
+			obj = ItemRangeControl.getRangeObject(item);
+			rangeValue = obj.rangeValue;
+			rangeType = obj.rangeType;
 			
 			if (rangeType === SelectionRangeType.SELFONLY) {
 				return [];
@@ -121,6 +116,33 @@ var IndexArray = {
 	}
 };
 
+var ItemRangeControl = {
+	getRangeObject: function(item) {
+		var itemType = item.getItemType();
+		var rangeValue = item.getRangeValue();
+		var rangeType = item.getRangeType();
+		
+		if (itemType === ItemType.QUICK) {
+			if (rangeType === SelectionRangeType.SELFONLY && item.getQuickInfo().getValue() === QuickValue.ONE) {
+				// If "Item Effects" is set to "One Unit," change to allow selection of a unit, even if the scope is single.
+				rangeValue = 1;
+				rangeType = SelectionRangeType.MULTI;
+			}
+		}
+		else if (itemType === ItemType.TELEPORTATION) {
+			if (rangeType === SelectionRangeType.SELFONLY) {
+				rangeValue = item.getTeleportationInfo().getRangeValue();
+				rangeType = item.getTeleportationInfo().getRangeType();
+			}
+		}
+		
+		return {
+			rangeValue: rangeValue,
+			rangeType: rangeType
+		};
+	}
+};
+
 var Probability = {
 	getProbability: function(percent) {
 		var n;
@@ -191,6 +213,8 @@ var GameOverChecker = {
 		var list = PlayerList.getSortieList();
 		var isGameOver = false;
 		
+		// The concept of a game over only exists in SceneType.FREE.
+		// RestSession does not have isMapState implemented, so it is considered a countermeasure for when GameOver is called in the base.
 		if (root.getBaseScene() !== SceneType.FREE) {
 			return false;
 		}
@@ -866,7 +890,7 @@ var UnitEventChecker = {
 			info = event.getUnitEventInfo();
 			if (info.getUnitEventType() === unitEventType) {
 				if (unitEventType === UnitEventType.BATTLE) {
-					if (event.isBattleEvent(targetUnit)) {
+					if (this._isBattleEvent(unit, targetUnit, event)) {
 						return event;
 					}
 				}
@@ -879,6 +903,13 @@ var UnitEventChecker = {
 		}
 		
 		return null;
+	},
+	
+	_isBattleEvent: function(unit, targetUnit, event) {
+		// For enemy units that have a battle unit event with XX unit and Active unit,
+		// if the conditions for XX unit are not met, nothing is shown (including the Active unit event).
+		// To have it show the Active unit event in such a case, call event.isBattleEventEx(targetUnit);
+		return event.isBattleEvent(targetUnit);
 	}
 };
 
@@ -913,7 +944,7 @@ var AttackChecker = {
 		
 		for (i = 0; i < count; i++) {
 			item = UnitItemControl.getItem(unit, i);
-			if (item !== null && ItemControl.isWeaponAvailable(unit, item)) {
+			if (item !== null && ItemControl.isWeaponAvailable(unit, item) && this._isWeaponEnabled(item)) {
 				indexArray = this.getAttackIndexArray(unit, item, true);
 				if (indexArray.length !== 0) {
 					return true;
@@ -971,28 +1002,10 @@ var AttackChecker = {
 	
 	// Check if the targetUnit can counterattack the unit.
 	isCounterattack: function(unit, targetUnit) {
-		var weapon, indexArray;
+		var indexArray;
+		var weapon = this._getCounterWeapon(unit, targetUnit);
 		
-		if (!Calculator.isCounterattackAllowed(unit, targetUnit)) {
-			return false;
-		}
-		
-		weapon = ItemControl.getEquippedWeapon(unit);
-		if (weapon !== null && weapon.isOneSide()) {
-			// If the attacker is equipped with "One Way" weapon, no counterattack occurs.
-			return false;
-		}
-		
-		// Get the equipped weapon of those who is attacked.
-		weapon = ItemControl.getEquippedWeapon(targetUnit);
-		
-		// If no weapon is equipped, cannot counterattack.
 		if (weapon === null) {
-			return false;
-		}
-		
-		// If "One Way" weapon is equipped, cannot counterattack.
-		if (weapon.isOneSide()) {
 			return false;
 		}
 		
@@ -1012,6 +1025,45 @@ var AttackChecker = {
 		indexArray = IndexArray.createIndexArray(targetUnit.getMapX(), targetUnit.getMapY(), weapon);
 		
 		return IndexArray.findPos(indexArray, x, y);
+	},
+	
+	_getCounterWeapon: function(unit, targetUnit) {
+		var weapon;
+		
+		if (!Calculator.isCounterattackAllowed(unit, targetUnit)) {
+			return null;
+		}
+		
+		weapon = ItemControl.getEquippedWeapon(unit);
+		if (weapon !== null && weapon.isOneSide()) {
+			// If the attacker is equipped with "One Way" weapon, no counterattack occurs.
+			return null;
+		}
+		
+		// Get the equipped weapon of those who is attacked.
+		weapon = ItemControl.getEquippedWeapon(targetUnit);
+		
+		// If no weapon is equipped, cannot counterattack.
+		if (weapon === null) {
+			return null;
+		}
+		
+		// If "One Way" weapon is equipped, cannot counterattack.
+		if (weapon.isOneSide()) {
+			return null;
+		}
+		
+		if (!this._isWeaponEnabled(weapon)) {
+			return null;
+		}
+		
+		return weapon;
+	},
+	
+	_isWeaponEnabled: function(weapon) {
+		// Checks whether the Attack command or counterattacks are allowed with the specified weapon.
+		// Return false for cases where the weapon can be equipped but it's broken and you don't want it to be used in battle.
+		return true;
 	}
 };
 
@@ -1176,6 +1228,11 @@ var ClassChangeChecker = {
 		}
 		else if (ou === OverUnderType.UNDER) {
 			if (srcValue < destValue) {
+				result = true;
+			}
+		}
+		else if (ou === OverUnderType.NOTEQUALSTO) {
+			if (srcValue !== destValue) {
 				result = true;
 			}
 		}

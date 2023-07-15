@@ -418,6 +418,10 @@ var DropFlowEntry = defineObject(BaseFlowEntry,
 		// Set the drop trophy as TrophyCollector.
 		for (i = 0; i < count; i++) {
 			trophy = list.getData(i);
+			if (!this._isTrophyGettable(winner, loser, trophy)) {
+				continue;
+			}
+			
 			if ((trophy.getFlag() & TrophyFlag.ITEM) && DataConfig.isDropTrophyLinked()) {
 				// If "Delete drop trophies if weapons break" is ticked,
 				// weapon durability affects the drop trophy.
@@ -452,6 +456,10 @@ var DropFlowEntry = defineObject(BaseFlowEntry,
 		var editor = root.getCurrentSession().getTrophyEditor();
 		
 		editor.deleteAllTrophy(list);
+	},
+	
+	_isTrophyGettable: function(winner, loser, trophy) {
+		return true;
 	}
 }
 );

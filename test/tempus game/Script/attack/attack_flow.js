@@ -416,13 +416,21 @@ var UnitDeathFlowEntry = defineObject(BaseFlowEntry,
 	_playUnitDeathMusic: function() {
 		var handle;
 		
-		if (this._passiveUnit.getUnitType() === UnitType.PLAYER && !this._passiveUnit.isGuest()) {
-			handle = root.querySoundHandle('playerdeathmusic');
+		if (this._isDeathMusicAllowed()) {
+			handle = this._getDeathMusicHandle();
 			if (!handle.isNullHandle()) {
 				MediaControl.musicPlay(handle);
 				this._coreAttack.getBattleObject().getBattleTable().setMusicPlayFlag(true);
 			}
 		}
+	},
+	
+	_isDeathMusicAllowed: function() {
+		return this._passiveUnit.getUnitType() === UnitType.PLAYER && !this._passiveUnit.isGuest();
+	},
+	
+	_getDeathMusicHandle: function() {
+		return root.querySoundHandle('playerdeathmusic');
 	}
 }
 );
@@ -897,9 +905,12 @@ var StateAutoRemovalFlowEntry = defineObject(BaseFlowEntry,
 		var attackFlow = coreAttack.getAttackFlow();
 		var order = attackFlow.getAttackOrder();
 		var attackInfo = attackFlow.getAttackInfo();
+		var prevIndex = order.getCurrentIndex();
 		
 		this._checkState(attackInfo.unitSrc, order);
 		this._checkState(attackInfo.unitDest, order);
+		
+		order.setCurrentIndex(prevIndex);
 		
 		return EnterResult.NOTENTER;
 	},

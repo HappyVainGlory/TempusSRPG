@@ -178,6 +178,10 @@ var SceneManager = {
 		this._isForceForeground = isForceForeground;
 	},
 	
+	isCustomScene: function(sceneType) {
+		return sceneType >= SceneType.CUSTOM && sceneType <= SceneType.RESERVED;
+	},
+	
 	_createSceneObject: function(scene) {
 		var obj = null;
 		

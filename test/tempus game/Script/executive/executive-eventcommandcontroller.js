@@ -14,7 +14,7 @@ var EventCommandController = {
 				// Check if the 'Ignore UI' is checked at the event command.
 				// If not checked, the isGraphicsSkip returns true.
 				eventCommandData = root.getEventCommandObject();
-				if (eventCommandData.isGraphicsSkip()) {
+				if (eventCommandData !== null && eventCommandData.isGraphicsSkip()) {
 					this._isTemporarySkip = true;
 					this._commandTypeTemporarySkip = root.getEventCommandType();
 					root.setEventSkipMode(true);
@@ -125,6 +125,8 @@ var EventCommandController = {
 	},
 	
 	isOriginAccess: function(commandType) {
+		var eventCommandData;
+		
 		if (commandType === EventCommandType.MESSAGESHOW ||
 			commandType === EventCommandType.MESSAGETEROP ||
 			commandType === EventCommandType.STILLMESSAGE ||
@@ -139,8 +141,11 @@ var EventCommandController = {
 			commandType === EventCommandType.INFOWINDOW
 		) {
 			// In these event commands, even though the size of the map is less than the screen resolution,
-			// draw it like the top left of the screen is the origin. 
-			return root.getEventCommandObject().isBackTarget();
+			// draw it like the top left of the screen is the origin.
+			eventCommandData = root.getEventCommandObject();
+			if (eventCommandData !== null) {
+				return eventCommandData.isBackTarget();
+			}
 		}
 		
 		return false;

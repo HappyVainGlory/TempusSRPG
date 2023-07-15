@@ -435,17 +435,23 @@ var FaceView = defineObject(BaseObject,
 		
 		if (pos === MessagePos.TOP) {
 			this._topView = createObject(FaceViewTop);
-			messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.TOP);
+			if (messageViewParam.messageLayout === null) {
+				messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.TOP);
+			}
 			this._topView.setupMessageView(messageViewParam);
 		}
 		else if (pos === MessagePos.CENTER) {
 			this._centerView = createObject(FaceViewCenter);
-			messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.CENTER);
+			if (messageViewParam.messageLayout === null) {
+				messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.CENTER);
+			}
 			this._centerView.setupMessageView(messageViewParam);
 		}
 		else if (pos === MessagePos.BOTTOM) {
 			this._bottomView = createObject(FaceViewBottom);
-			messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.BOTTOM);
+			if (messageViewParam.messageLayout === null) {
+				messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.BOTTOM);
+			}
 			this._bottomView.setupMessageView(messageViewParam);
 		}
 		
@@ -481,19 +487,9 @@ var FaceView = defineObject(BaseObject,
 			isBottomActive = this._activePos === MessagePos.BOTTOM;
 		}
 		
-		if (this._topView !== null) {
-			this._topView.drawCharIllust(isTopActive);
-		}
+		this._drawFaceViewCharIllust(isTopActive, isCenterActive, isBottomActive);
 		
-		if (this._centerView !== null) {
-			this._centerView.drawCharIllust(isCenterActive);
-		}
-		
-		if (this._bottomView !== null) {
-			this._bottomView.drawCharIllust(isBottomActive);
-		}
-		
-		if (root.isMessageWindowFixed()) {
+		if (this._isMessageWindowFixed()) {
 			if (this._activePos === MessagePos.TOP) {
 				view = this._topView;
 				isActive = isTopActive;
@@ -554,6 +550,24 @@ var FaceView = defineObject(BaseObject,
 		}
 		
 		this._activePos = MessagePos.NONE;
+	},
+	
+	_drawFaceViewCharIllust: function(isTopActive, isCenterActive, isBottomActive) {
+		if (this._topView !== null) {
+			this._topView.drawCharIllust(isTopActive);
+		}
+		
+		if (this._centerView !== null) {
+			this._centerView.drawCharIllust(isCenterActive);
+		}
+		
+		if (this._bottomView !== null) {
+			this._bottomView.drawCharIllust(isBottomActive);
+		}
+	},
+	
+	_isMessageWindowFixed: function() {
+		return root.isMessageWindowFixed();
 	}
 }
 );

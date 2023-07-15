@@ -53,7 +53,7 @@ var MessageTeropEventCommand = defineObject(BaseEventCommand,
 		var eventCommandData = root.getEventCommandObject();
 		var messageViewParam = StructureBuilder.buildMessageViewParam();
 		
-		messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.TEROP);
+		messageViewParam.messageLayout = this._getMessageLayout();
 		messageViewParam.text = eventCommandData.getText();
 		messageViewParam.pos = eventCommandData.getTextPosValue();
 		messageViewParam.speakerType = eventCommandData.getSpeakerType();
@@ -63,6 +63,10 @@ var MessageTeropEventCommand = defineObject(BaseEventCommand,
 		messageViewParam.isWindowDisplayable = eventCommandData.isTeropWindowDisplayable();
 		
 		return messageViewParam;
+	},
+	
+	_getMessageLayout: function() {
+		return root.getDefaultMessageLayout(MessageLayout.TEROP);
 	}
 }
 );

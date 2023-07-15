@@ -63,6 +63,7 @@ var MessageShowEventCommand = defineObject(BaseEventCommand,
 		var eventCommandData = root.getEventCommandObject();
 		var messageViewParam = StructureBuilder.buildMessageViewParam();
 		
+		messageViewParam.messageLayout = this._getMessageLayout();
 		messageViewParam.text = eventCommandData.getText();
 		messageViewParam.pos = eventCommandData.getTextPosValue();
 		messageViewParam.speakerType = eventCommandData.getSpeakerType();
@@ -71,6 +72,35 @@ var MessageShowEventCommand = defineObject(BaseEventCommand,
 		messageViewParam.facialExpressionId = eventCommandData.getFacialExpressionId();
 		
 		return messageViewParam;
+	},
+	
+	_getMessageLayout: function() {
+		var messageLayout = null;
+		var pos = root.getEventCommandObject().getTextPosValue();
+		
+		if (pos === MessagePos.TOP) {
+			messageLayout = this._getLayoutTop();
+		}
+		else if (pos === MessagePos.CENTER) {
+			messageLayout = this._getLayoutCenter();
+		}
+		else if (pos === MessagePos.BOTTOM) {
+			messageLayout = this._getLayoutBottom();
+		}
+		
+		return messageLayout;
+	},
+	
+	_getLayoutTop: function() {
+		return root.getDefaultMessageLayout(MessageLayout.TOP);
+	},
+	
+	_getLayoutCenter: function() {
+		return root.getDefaultMessageLayout(MessageLayout.CENTER);
+	},
+	
+	_getLayoutBottom: function() {
+		return root.getDefaultMessageLayout(MessageLayout.BOTTOM);
 	}
 }
 );

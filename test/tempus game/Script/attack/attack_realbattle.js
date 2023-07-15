@@ -228,7 +228,6 @@ var RealBattle = defineObject(BaseBattle,
 		this._effectArray = [];
 		this._idleCounter = createObject(IdleCounter);
 		this._autoScroll = createObject(RealAutoScroll);
-		this._battleTransition = createObject(BattleTransition);
 		this._uiBattleLayout = this._createUIBattleLayout();
 		
 		this._createBattleArea();
@@ -647,6 +646,10 @@ var BaseBattler = defineObject(BaseObject,
 			return MoveResult.CONTINUE;
 		}
 		
+		if (!this._startNextFrame()) {
+			return false;
+		}
+		
 		motionCategoryType = this.getMotionCategoryType();
 		if (motionCategoryType === MotionCategoryType.NORMAL) {
 			this.moveNormal();
@@ -833,6 +836,7 @@ var BaseBattler = defineObject(BaseObject,
 	},
 	
 	lostBattler: function() {
+		this._motion.lockSound();
 	},
 	
 	isSrc: function() {
@@ -900,6 +904,10 @@ var BaseBattler = defineObject(BaseObject,
 		}
 		
 		return isEnd;
+	},
+	
+	_startNextFrame: function() {
+		return true;
 	}
 }
 );
@@ -1376,6 +1384,12 @@ var RealEffect = defineObject(BaseCustomEffect,
 		return this._motion;
 	},
 	
+	enableSpriteScaling: function(isScaling) {
+		if (isScaling) {
+			this._motion._realEffect = this;
+		}
+	},
+	
 	updateKeyPos: function() {
 		var isRight, pos;
 		
@@ -1394,6 +1408,7 @@ var RealEffect = defineObject(BaseCustomEffect,
 			isRight = this._realBattle.getPassiveBattler() === this._realBattle.getBattler(true);
 		}
 		
+		// The position based on the enlargement/shrinkage of the effect can be retrieved if realEffect is specified in the first argument.
 		pos = this._realBattle.getPassiveBattler().getAnimeMotion().getEffectPos(this, isRight);	
 		
 		this._motion._xKey = pos.x;
@@ -1401,15 +1416,17 @@ var RealEffect = defineObject(BaseCustomEffect,
 	},
 	
 	_isCurrentFrameCheck: function() {
+		// It is acceptable to return false for real battle effects that deal damage if the size of the first frame is the same as the other frames.
 		return true;
 	},
 	
-	// In order to play an effect that continues shrinking even after "Detect Hit on this frame" has passed,
-	// this method ought to return true.
+	// In order to play an effect that continues shrinking even after "Detect Hit on this frame" has passed, this method ought to return true.
 	_isUpdatable: function() {
 		var motionCategoryType = this._realBattle.getPassiveBattler().getMotionCategoryType();
 		
 		if (motionCategoryType === MotionCategoryType.AVOID || motionCategoryType === MotionCategoryType.DAMAGE) {
+			// There may be motions incorporated in the animation editor that retreat when avoiding attacks or taking damage.
+			// In these cases, it would be awkward if the effect retreated with the motion, so the effect's position should not be updated.
 			return false;
 		}
 		
@@ -1687,7 +1704,7 @@ var UIBattleLayout = defineObject(BaseObject,
 		}
 		
 		this._scrollBackground.moveScrollBackground();
-				
+		
 		return MoveResult.CONTINUE;
 	},
 	
@@ -2090,6 +2107,7 @@ var UIBattleLayout = defineObject(BaseObject,
 			pos = battler.getEffectPos(anime);
 			effect = this._realBattle.createEffect(anime, pos.x + offsetPos.x, pos.y + offsetPos.y, isRight, false);
 			effect.setAsync(this._isDamageEffectAsync());
+			effect.enableSpriteScaling(this._isDamageEffectScaling());
 		}
 		
 		if (isNoDamage) {
@@ -2106,11 +2124,17 @@ var UIBattleLayout = defineObject(BaseObject,
 			pos = battler.getEffectPos(anime);
 			effect = this._realBattle.createEffect(anime, pos.x + offsetPos.x, pos.y + offsetPos.y + this._getTextAnimeOffsetY(), isRight, false);
 			effect.setAsync(false);
+			effect.enableSpriteScaling(this._isDamageEffectScaling());
 		}
 		
 		if (!isNoDamage && this._isDamagePopupDisplayable()) {
 			this._showDamagePopup(battler, this._realBattle.getAttackOrder().getPassiveFullDamage(), isCritical);
 		}
+	},
+	
+	_isDamageEffectScaling: function() {
+		// Returns true if the scaling factor of the damage effect is not constant.
+		return false;
 	},
 	
 	_isDamageEffectAsync: function() {
@@ -2140,7 +2164,7 @@ var UIBattleLayout = defineObject(BaseObject,
 		var pos = battler.getEffectPos(anime);
 		var isRight = battler === this._realBattle.getBattler(true);
 		
-		this._realBattle.createEffect(anime, pos.x, pos.y, isRight, false);
+		return this._realBattle.createEffect(anime, pos.x, pos.y, isRight, false);
 	},
 	
 	_showAvoidAnime: function(battler) {
@@ -2148,7 +2172,7 @@ var UIBattleLayout = defineObject(BaseObject,
 		var pos = battler.getEffectPos(anime);
 		var isRight = battler === this._realBattle.getBattler(true);
 		
-		this._realBattle.createEffect(anime, pos.x, pos.y + this._getTextAnimeOffsetY(), isRight, false);
+		return this._realBattle.createEffect(anime, pos.x, pos.y + this._getTextAnimeOffsetY(), isRight, false);
 	},
 	
 	_getTextAnimeOffsetY: function() {

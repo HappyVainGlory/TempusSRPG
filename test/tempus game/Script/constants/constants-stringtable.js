@@ -263,7 +263,7 @@ var StringTable = {
 	ItemSteal: ' was stolen',
 	
 	ClassChangeInfo_Target: 'Targets',
-	
+	QuickInfo_Surroundings: 'Surroundings',
 	Teleportation_Range: 'Rng',
 	
 	SkillCategory_BattleAttack: 'Battle Attack Type',

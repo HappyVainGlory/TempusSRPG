@@ -759,6 +759,8 @@ AttackEvaluator.ActiveAction = defineObject(BaseAttackEvaluator,
 		
 		// If the opponent gets damages, and HP is less than 0.
 		if (virtualPassive.hp - damagePassive < 0) {
+			attackEntry.damagePassiveFull = damagePassive;
+			
 			// Damage to give is the opponent HP.
 			// For example, if the opponent's HP is 3 and damage is 5, damage will be 3.
 			damagePassive = virtualPassive.hp;
@@ -1572,6 +1574,9 @@ var MotionIdControl = {
 	
 	_getBowIdInternal: function(collection, midData) {
 		var type;
+		var count = midData.count;
+		
+		count %= 2;
 		
 		if (midData.isCritical) {
 			if (midData.isFinish) {
@@ -1582,7 +1587,12 @@ var MotionIdControl = {
 			}
 		}
 		else {
-			type = MotionArcher.BOW;
+			if (count === 0) {
+				type = MotionArcher.BOW;
+			}
+			else {
+				type = MotionArcher.BOW2;
+			}
 		}
 		
 		midData.id = collection.getArcherId(type);
@@ -1591,6 +1601,9 @@ var MotionIdControl = {
 	
 	_getMagicIdInternal: function(collection, midData) {
 		var type;
+		var count = midData.count;
+		
+		count %= 2;
 		
 		if (midData.isCritical) {
 			if (midData.isFinish) {
@@ -1601,7 +1614,12 @@ var MotionIdControl = {
 			}
 		}
 		else {
-			type = MotionMage.MAGIC;
+			if (count === 0) {
+				type = MotionMage.MAGIC;
+			}
+			else {
+				type = MotionMage.MAGIC2;
+			}
 		}
 		
 		midData.id = collection.getMageId(type);

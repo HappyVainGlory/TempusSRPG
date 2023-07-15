@@ -870,7 +870,7 @@ var TextParser = defineObject(BaseObject,
 		
 		for (;;) {
 			// Point an index on the text.
-			min = 999;
+			min = this._getDefaultMin();
 			
 			// Point an index on the string.
 			index = -1;
@@ -941,6 +941,10 @@ var TextParser = defineObject(BaseObject,
 		}
 		
 		return false;
+	},
+	
+	_getDefaultMin: function() {
+		return 999;
 	},
 	
 	// For one control character, one object exists.
@@ -1455,7 +1459,7 @@ var VariableReplacer = defineObject(BaseObject,
 		arr = this._variableArray;
 		
 		for (;;) {
-			min = 999;
+			min = this._getDefaultMin();
 			index = -1;
 		
 			count = arr.length;
@@ -1486,6 +1490,10 @@ var VariableReplacer = defineObject(BaseObject,
 		return s;
 	},
 	
+	_getDefaultMin: function() {
+		return 999;
+	},
+	
 	_configureVariableObject: function(groupArray) {
 		groupArray.appendObject(DataVariable.Act);
 		groupArray.appendObject(DataVariable.Pdb);
@@ -1502,6 +1510,11 @@ var VariableReplacer = defineObject(BaseObject,
 		groupArray.appendObject(DataVariable.Va4);
 		groupArray.appendObject(DataVariable.Va5);
 		groupArray.appendObject(DataVariable.Va6);
+		groupArray.appendObject(DataVariable.VPdb);
+		groupArray.appendObject(DataVariable.VCdb);
+		groupArray.appendObject(DataVariable.VWdb);
+		groupArray.appendObject(DataVariable.VIdb);
+		groupArray.appendObject(DataVariable.VSdb);
 	}
 }
 );
@@ -1579,6 +1592,8 @@ DataVariable.Act = defineObject(BaseDataVariable,
 DataVariable.Pdb = defineObject(BaseDataVariable,
 {
 	getList: function() {
+		// This method can be called for games that change unit names.
+		// return root.getMetaSession().getTotalPlayerList();
 		return root.getBaseData().getPlayerList();
 	},
 	
@@ -1776,6 +1791,93 @@ DataVariable.Va6 = defineObject(BaseDataVariable,
 	
 	getKey: function() {
 		var key = /\\va6\[(\d+)\]/;
+		
+		return key;
+	}
+}
+);
+
+// Having to write \pdb[va1[0]] is lengthy. This object supports \vpdb1[0] as shorthand.
+
+var BaseDataVariable2 = defineObject(BaseDataVariable,
+{
+	getIdFromKey: function(text) {
+		var key = this.getKey();
+		var c = text.match(key);
+		var v_tab = Number(c[1]);
+		var v_id = Number(c[2]);
+		var table = root.getMetaSession().getVariableTable(v_tab - 1);
+		var index = table.getVariableIndexFromId(v_id);
+		
+		return table.getVariable(index);
+	}
+}
+);
+
+DataVariable.VPdb = defineObject(BaseDataVariable2,
+{
+	getList: function() {
+		return root.getBaseData().getPlayerList();
+	},
+	
+	getKey: function() {
+		var key = /\\vpdb(\d{1})\[(\d+)\]/;
+		
+		return key;
+	}
+}
+);
+
+DataVariable.VCdb = defineObject(BaseDataVariable2,
+{
+	getList: function() {
+		return root.getBaseData().getClassList();
+	},
+	
+	getKey: function() {
+		var key = /\\vcdb(\d{1})\[(\d+)\]/;
+		
+		return key;
+	}
+}
+);
+
+DataVariable.VWdb = defineObject(BaseDataVariable2,
+{
+	getList: function() {
+		return root.getBaseData().getWeaponList();
+	},
+	
+	getKey: function() {
+		var key = /\\vwdb(\d{1})\[(\d+)\]/;
+		
+		return key;
+	}
+}
+);
+
+DataVariable.VIdb = defineObject(BaseDataVariable2,
+{
+	getList: function() {
+		return root.getBaseData().getItemList();
+	},
+	
+	getKey: function() {
+		var key = /\\vidb(\d{1})\[(\d+)\]/;
+		
+		return key;
+	}
+}
+);
+
+DataVariable.VSdb = defineObject(BaseDataVariable2,
+{
+	getList: function() {
+		return root.getBaseData().getSkillList();
+	},
+	
+	getKey: function() {
+		var key = /\\vsdb(\d{1})\[(\d+)\]/;
 		
 		return key;
 	}

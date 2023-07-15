@@ -112,7 +112,7 @@ var UnitAllCommandEventCommand = defineObject(BaseEventCommand,
 		var i, j, count, list, targetUnit;
 		var eventCommandData = root.getEventCommandObject();
 		var filter = eventCommandData.getFilterFlag();
-		var listArray = FilterControl.getListArray(filter);
+		var listArray = this._getListArray(filter, eventCommandData);
 		var listCount = listArray.length;
 		
 		for (i = 0; i < listCount; i++) {
@@ -132,6 +132,10 @@ var UnitAllCommandEventCommand = defineObject(BaseEventCommand,
 		if (this._isGuestListAllowed(filter)) {
 			this._appendGuestUnit(filter, eventCommandData);
 		}
+	},
+	
+	_getListArray: function(filter, eventCommandData) {
+		return FilterControl.getListArray(filter);
 	},
 	
 	_appendGuestUnit: function(filter, eventCommandData) {
@@ -625,6 +629,9 @@ var AllEventFlowEntry = defineObject(BaseFlowEntry,
 		else if (commandType === EventCommandType.MAPPOSOPERATION) {
 			this._mapPosOperation(generator, targetUnit, command);
 		}
+		else if (commandType === EventCommandType.SCRIPTEXECUTE) {
+			this._scriptExecute(generator, targetUnit, command);
+		}
 	},
 	
 	_unitRemove: function(generator, targetUnit, command) {
@@ -697,6 +704,10 @@ var AllEventFlowEntry = defineObject(BaseFlowEntry,
 	
 	_mapPosOperation: function(generator, targetUnit, command) {
 		generator.mapPosOperation(targetUnit, targetUnit.getMapX(), targetUnit.getMapY(), command.getMapChipGraphicsHandle());
+	},
+	
+	_scriptExecute: function(generator, targetUnit, command) {
+		generator.scriptExecuteCode(targetUnit, '');
 	},
 	
 	_isCommandSkip: function(command) {

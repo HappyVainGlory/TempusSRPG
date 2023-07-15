@@ -197,9 +197,13 @@ var BattleSetupScene = defineObject(BaseScene,
 	_changeFreeScene: function() {
 		// Only if change scene or victory map doesn't occur in the event, execute SceneType.FREE.
 		if (root.getCurrentScene() === SceneType.BATTLESETUP) {
-			MediaControl.clearMusicCache();
+			this._closeMusic();
 			root.changeScene(SceneType.FREE);
 		}
+	},
+	
+	_closeMusic: function() {
+		MediaControl.clearMusicCache();
 	},
 	
 	_drawSortieMark: function() {
@@ -346,6 +350,12 @@ var OpeningEventFlowEntry = defineObject(BaseFlowEntry,
 	},
 	
 	_doLastAction: function() {
+		// 
+		// 
+		if (SceneManager._sceneType !== SceneType.BATTLESETUP) {
+			return;
+		}
+		
 		// Deactivate non visible state.
 		SceneManager.getActiveScene().getSortieSetting().startSortieSetting(false);
 		
@@ -531,7 +541,7 @@ var SortieSetting = defineObject(BaseScreen,
 		var i, j, list, listCount, count;
 		var listArray = FilterControl.getAliveListArray(UnitFilterFlag.PLAYER);
 		
-		if (!root.getCurrentSession().getCurrentMapInfo().isBattleSetupScreenDisplayable()) {
+		if (!this._isSortieSettingEnabled()) {
 			return;
 		}
 		
@@ -627,21 +637,28 @@ var SortieSetting = defineObject(BaseScreen,
 		sortiePos.unit = unit;
 	},
 	
+	getDefaultSortieMaxCount: function() {
+		return cur_map.getSortieMaxCount();
+	},
+	
+	_isSortieSettingEnabled: function() {
+		return root.getCurrentSession().getCurrentMapInfo().isBattleSetupScreenDisplayable();
+	},
+	
 	_createSortiePosArray: function() {
 		var i, sortiePos;
-		var mapInfo = root.getCurrentSession().getCurrentMapInfo();
-		var count = mapInfo.getSortieMaxCount();
+		var count = this.getDefaultSortieMaxCount();
 		
 		this._sortiePosArray = [];
 		
 		for (i = 0; i < count; i++) {
 			sortiePos = StructureBuilder.buildSortiePos();
-			sortiePos.x = mapInfo.getSortiePosX(i);
+			sortiePos.x = this._getDefaultSortiePosX(i);
 			if (sortiePos.x === -1) {
 				// If the original sortie number is changed to be exceeded, the process is not continued.
 				break;
 			}
-			sortiePos.y = mapInfo.getSortiePosY(i);
+			sortiePos.y = this._getDefaultSortiePosY(i);
 			sortiePos.unit = null;
 			sortiePos.isFixed = false;
 			this._sortiePosArray.push(sortiePos);
@@ -812,6 +829,14 @@ var SortieSetting = defineObject(BaseScreen,
 		}
 		
 		return number;
+	},
+	
+	_getDefaultSortiePosX: function(i) {
+		return cur_map.getSortiePosX(i);
+	},
+	
+	_getDefaultSortiePosY: function(i) {
+		return cur_map.getSortiePosY(i);
 	}
 }
 );

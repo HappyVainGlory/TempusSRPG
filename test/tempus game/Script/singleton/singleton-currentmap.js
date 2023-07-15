@@ -534,7 +534,8 @@ var IconDecorationType = {
 	STATE: 0,
 	FUSION: 1,
 	STATEORFUSION: 2,
-	CLASSTYPE: 10
+	CLASSTYPE: 10,
+	EQUIPWEAPON: 11
 };
 
 var MapIconDecorator = {

@@ -188,7 +188,7 @@ var BaseCombinationCollector = defineObject(BaseObject,
 			filter = UnitFilterFlag.ENEMY;
 		}
 		else if (filter & UnitFilterFlag.ENEMY) {
-			filter = UnitFilterFlag.PLAYER;
+			filter = UnitFilterFlag.PLAYER | UnitFilterFlag.ALLY;
 		}
 		else if (filter & UnitFilterFlag.ALLY) {
 			filter = UnitFilterFlag.ENEMY;
@@ -460,18 +460,11 @@ CombinationCollector.Item = defineObject(BaseCombinationCollector,
 		
 		filter = obj.getUnitFilter(unit, item);
 		
-		if (item.getItemType() === ItemType.TELEPORTATION && item.getRangeType() === SelectionRangeType.SELFONLY) {
-			rangeValue = item.getTeleportationInfo().getRangeValue();
-			rangeType = item.getTeleportationInfo().getRangeType();
-		}
-		else {
-			rangeValue = item.getRangeValue();
-			rangeType = item.getRangeType();
-		}
+		obj = this._getRangeObjectInternal(item);
 		
 		rangeMetrics = StructureBuilder.buildRangeMetrics();
-		rangeMetrics.endRange = rangeValue;
-		rangeMetrics.rangeType = rangeType;
+		rangeMetrics.endRange = obj.rangeValue;
+		rangeMetrics.rangeType = obj.rangeType;
 			
 		this._setUnitRangeCombination(misc, filter, rangeMetrics);
 	},
@@ -522,6 +515,18 @@ CombinationCollector.Item = defineObject(BaseCombinationCollector,
 		
 		// At the AI, don't use ItemPackageControl.getItemAvailabilityObject.
 		return ItemControl.isItemUsable(unit, item);
+	},
+	
+	_getRangeObjectInternal: function(item) {
+		var obj = ItemRangeControl.getRangeObject(item);
+		
+		if (item.getItemType() === ItemType.QUICK && obj.rangeType === SelectionRangeType.SELFONLY) {
+			// Even if the scope is set to single, it is treated as range 1.
+			obj.rangeValue = 1;
+			obj.rangeType = SelectionRangeType.MULTI;
+		}
+		
+		return obj;
 	}
 }
 );
@@ -659,6 +664,26 @@ var AIFirstStage_UnitSupportStatusTable = {
 		return status;
 	},
 	
+	getAvoidScore: function(unit) {
+		var i, count, obj;
+		var score = 0;
+		var totalStatus = this.getTotalStatus(unit);
+		
+		if (totalStatus === null) {
+			return score;
+		}
+		
+		count = totalStatus.avoidArray.length;
+		for (i = 0; i < count; i++) {
+			obj = totalStatus.avoidArray[i];
+			if (IndexArray.findUnit(obj.indexArray, unit)) {
+				score = obj.avoid;
+			}
+		}
+		
+		return score;
+	},
+	
 	_createStatus: function(unit) {
 		var totalStatus = {};
 		
@@ -668,6 +693,7 @@ var AIFirstStage_UnitSupportStatusTable = {
 		totalStatus.avoidTotal = 0;
 		totalStatus.criticalTotal = 0;
 		totalStatus.criticalAvoidTotal = 0;
+		totalStatus.avoidArray = [];
 		
 		// Perform a check to see if units have support skills that target themselves.
 		this._checkSelfSupportSkill(unit, totalStatus);
@@ -687,7 +713,6 @@ var AIFirstStage_UnitSupportStatusTable = {
 			skill = arr[i].skill;
 			if (skill.getRangeType() === SelectionRangeType.SELFONLY) {
 				this._addStatus(totalStatus, skill.getSupportStatus());
-				break;
 			}
 		}
 	},
@@ -705,26 +730,55 @@ var AIFirstStage_UnitSupportStatusTable = {
 				if (unit === targetUnit) {
 					continue;
 				}
-				
-				this._checkFriendSupportSkillInternal(unit, targetUnit, totalStatus);
+				this._checkFriendSupportSkillInternal(targetUnit, unit, totalStatus);
 			}
 		}
 	},
 	
 	_checkFriendSupportSkillInternal: function(unit, targetUnit, totalStatus) {
-		var i, skill;
+		var i, skill, isSet, indexArray, rangeType;
 		var arr = SkillControl.getDirectSkillArray(unit, SkillType.SUPPORT, '');
 		var count = arr.length;
 		
 		for (i = 0; i < count; i++) {
 			skill = arr[i].skill;
-			if (skill.getRangeType() === SelectionRangeType.ALL) {
-				if (SupportCalculator._isSupportable(unit, targetUnit, skill)) {
-					this._addStatus(totalStatus, skill.getSupportStatus());
-				}
-				break;
+			isSet = false;
+			indexArray = [];
+			
+			rangeType = skill.getRangeType();
+			if (rangeType === SelectionRangeType.ALL) {
+				isSet = true;
+			}
+			else if (rangeType === SelectionRangeType.MULTI) {
+				indexArray = IndexArray.getBestIndexArray(unit.getMapX(), unit.getMapY(), 1, skill.getRangeValue());
+				isSet = IndexArray.findUnit(indexArray, targetUnit);
+			}
+			
+			if (isSet && SupportCalculator._isSupportable(unit, targetUnit, skill)) {
+				this._addAvoidArray(totalStatus, skill, indexArray);
+				this._addStatus(totalStatus, skill.getSupportStatus());
 			}
 		}
+	},
+	
+	_addAvoidArray: function(totalStatus, skill, indexArray) {
+		var supportStatus, avoid, obj;
+		
+		if (indexArray.length === 0) {
+			return;
+		}
+		
+		supportStatus = skill.getSupportStatus();
+		avoid = supportStatus.getAvoid();
+		if (avoid === 0) {
+			return;
+		}
+		
+		obj = {};
+		obj.indexArray = indexArray;
+		obj.avoid = avoid;
+		
+		totalStatus.avoidArray.push(obj);
 	},
 	
 	_addStatus: function(totalStatus, supportStatus) {
@@ -909,9 +963,13 @@ AIScorer.Weapon = defineObject(BaseAIScorer,
 		
 		score = Miscellaneous.convertAIValue(damage);
 		
-		// If the opponent can be beaten, prioritize it. 
+		// Greatly increase the score if the target can be defeated.
 		if (isDeath) {
 			score += 50;
+		}
+		else {
+			// Targets missing a larger portion of their HP are prioritized. Base score is 10.
+			score += Math.floor(10 * (1 - (hp / ParamBonus.getMhp(combination.targetUnit))));
 		}
 		
 		return score;
@@ -1117,9 +1175,10 @@ AIScorer.Avoid = defineObject(BaseAIScorer,
 		unit.setMapX(CurrentMap.getX(index));
 		unit.setMapY(CurrentMap.getY(index));
 		
-		// Get avoid rate and return the position.
 		// The avoid rate is score, so tend to move to the advantageous terrain.
-		score = AbilityCalculator.getAvoid(unit);
+		score = this._getBaseScore(unit, combination);
+		
+		score += this._plusScore(unit, combination);
 		
 		// If score is minus, don't act, so prevent it.
 		if (score < 0) {
@@ -1130,6 +1189,14 @@ AIScorer.Avoid = defineObject(BaseAIScorer,
 		unit.setMapY(y);
 		
 		return score;
+	},
+	
+	_getBaseScore: function(unit, combination) {
+		return AbilityCalculator.getAvoid(unit);
+	},
+	
+	_plusScore: function(unit, combination) {
+		return AIFirstStage_UnitSupportStatusTable.getAvoidScore(unit);
 	}
 }
 );
@@ -1607,7 +1674,27 @@ var SkillAutoAction = defineObject(BaseAutoAction,
 		generator.animationPlay(anime, pos.x, pos.y, false, AnimePlayType.SYNC, 1);
 		generator.unitStateChange(this._targetUnit, UnitStateChangeFlag.WAIT, 1);
 		
+		if (this._skill !== null && this._skill.getSkillValue() === QuickValue.SURROUNDINGS) {
+			this._enterQuickInternal(generator, this._targetUnit);
+		}
+		
 		return this._dynamicEvent.executeDynamicEvent();
+	},
+	
+	_enterQuickInternal: function(generator, targetUnit) {
+		var i, x, y, sideUnit;
+		var sx = targetUnit.getMapX();
+		var sy = targetUnit.getMapY();
+		
+		for (i = 0; i < DirectionType.COUNT; i++) {
+			x = sx + XPoint[i];
+			y = sy + YPoint[i];
+		
+			sideUnit = PosChecker.getUnitFromPos(x, y);
+			if (sideUnit !== null && sideUnit.isWait()) {
+				generator.unitStateChange(sideUnit, UnitStateChangeFlag.WAIT, 1);
+			}
+		}
 	},
 	
 	_enterPicking: function() {

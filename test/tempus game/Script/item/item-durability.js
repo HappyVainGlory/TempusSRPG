@@ -112,24 +112,12 @@ var DurabilityChangeType = {
 var DurabilityChangeItemUse = defineObject(BaseItemUse,
 {
 	enterMainUseCycle: function(itemUseParent) {
-		var durability, generator;
-		var increaseType = IncreaseType.ASSIGNMENT;
+		var generator;
 		var itemTargetInfo = itemUseParent.getItemTargetInfo();
-		var type = itemTargetInfo.item.getDurabilityInfo().getDurabilityChangeType();
-		
-		if (type === DurabilityChangeType.MAXRECOVERY) {
-			durability = itemTargetInfo.targetItem.getLimitMax();
-		}
-		else if (type === DurabilityChangeType.HALF) {
-			durability = Math.floor(itemTargetInfo.targetItem.getLimit() / 2);
-		}
-		else {
-			durability = -1;
-		}
 		
 		this._dynamicEvent = createObject(DynamicEvent);
 		generator = this._dynamicEvent.acquireEventGenerator();
-		generator.itemDurabilityChange(itemTargetInfo.targetUnit, itemTargetInfo.targetItem, durability, increaseType, itemUseParent.isItemSkipMode());
+		generator.itemDurabilityChange(itemTargetInfo.targetUnit, itemTargetInfo.targetItem, this._getDurability(itemTargetInfo), this._getIncreaseType(itemTargetInfo), itemUseParent.isItemSkipMode());
 		
 		return this._dynamicEvent.executeDynamicEvent();
 	},
@@ -140,6 +128,24 @@ var DurabilityChangeItemUse = defineObject(BaseItemUse,
 	
 	getItemAnimePos: function(itemUseParent, animeData) {
 		return this.getUnitBasePos(itemUseParent, animeData);
+	},
+	
+	_getDurability: function(itemTargetInfo) {
+		var durability = -1;
+		var type = itemTargetInfo.item.getDurabilityInfo().getDurabilityChangeType();
+		
+		if (type === DurabilityChangeType.MAXRECOVERY) {
+			durability = itemTargetInfo.targetItem.getLimitMax();
+		}
+		else if (type === DurabilityChangeType.HALF) {
+			durability = Math.floor(itemTargetInfo.targetItem.getLimit() / 2);
+		}
+		
+		return durability;
+	},
+	
+	_getIncreaseType: function(itemTargetInfo) {
+		return IncreaseType.ASSIGNMENT;
 	}
 }
 );
@@ -225,6 +231,8 @@ var DurabilitySelectManager = defineObject(BaseWindowManager,
 		if (this._itemListWindow.isIndexChanged()) {
 			this._itemInfoWindow.setInfoItem(this._itemListWindow.getCurrentItem());
 		}
+		
+		this._itemInfoWindow.moveWindow();
 		
 		return MoveResult.CONTINUE;
 	},

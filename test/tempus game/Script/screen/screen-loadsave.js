@@ -173,7 +173,7 @@ var LoadSaveScreen = defineObject(BaseScreen,
 	},
 	
 	_getCustomObject: function() {
-		return {};
+		return this._screenParam.customObject;
 	}
 }
 );
@@ -472,7 +472,7 @@ var LoadSaveScreenEx = defineObject(LoadSaveScreen,
 	},
 	
 	_setPositionSettings: function(obj) {
-		var area, mapInfo;
+		var area, session, mapInfo;
 		
 		obj.playerArrayX = [];
 		obj.playerArrayY = [];
@@ -487,8 +487,13 @@ var LoadSaveScreenEx = defineObject(LoadSaveScreen,
 			return obj;
 		}
 		else {
-			mapInfo = root.getCurrentSession().getCurrentMapInfo();
-			if (this._screenParam.mapId !== mapInfo.getId()) {
+			session = root.getCurrentSession();
+			if (session === null) {
+				return obj;
+			}
+			
+			mapInfo = session.getCurrentMapInfo();
+			if (mapInfo === null || this._screenParam.mapId !== mapInfo.getId()) {
 				return obj;
 			}
 		}
@@ -585,6 +590,10 @@ var SaveFileDetailWindow = defineObject(BaseWindow,
 		var i, count;
 		var object = saveFileInfo;
 		
+		if (object === null) {
+			return;
+		}
+		
 		if (!object.isCompleteFile() && object.getMapInfo() === null) {
 			this._saveFileInfo = null;
 			return;
@@ -655,11 +664,19 @@ var SaveFileDetailWindow = defineObject(BaseWindow,
 		return true;
 	},
 	
+	_isSceneMap: function() {
+		return this._saveFileInfo.getSceneType() !== SceneType.REST;
+	},
+	
+	_getBackgroundImage: function() {
+		return this._getRestBackgroundImage();
+	},
+	
 	_drawThumbnailMap: function(x, y) {
 		var cacheWidth, cacheHeight;
 		var mapData = null;
 		var image = null; 
-		var isMap = this._saveFileInfo.getSceneType() !== SceneType.REST;
+		var isMap = this._isSceneMap();
 		var width = this.getWindowWidth() - (DefineControl.getWindowXPadding() * 2);
 		var height = this.getWindowHeight() - (DefineControl.getWindowYPadding() * 2);
 		var graphicsManager = root.getGraphicsManager();
@@ -671,7 +688,7 @@ var SaveFileDetailWindow = defineObject(BaseWindow,
 			cacheHeight = mapData.getMapHeight() * GraphicsFormat.MAPCHIP_HEIGHT;
 		}
 		else {
-			image = this._getRestBackgroundImage();
+			image = this._getBackgroundImage();
 			if (image === null) {
 				return;
 			}

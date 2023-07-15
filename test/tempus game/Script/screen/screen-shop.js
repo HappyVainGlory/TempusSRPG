@@ -251,7 +251,7 @@ var ShopLayoutScreen = defineObject(BaseScreen,
 		for (;;) {
 			count = this._inventoryArray.length;
 			for (i = 0; i < count; i++) {
-				if (this._inventoryArray[i].getAmount() === -1) {
+				if (this._inventoryArray[i].getAmount() < 0) {
 					this._cutArrayData(i);
 					break;
 				}
@@ -434,6 +434,7 @@ var ShopLayoutScreen = defineObject(BaseScreen,
 	
 	_moveAnimation: function() {	
 		this._currencyWindow.moveWindow();
+		this._itemInfoWindow.moveWindow();
 		return MoveResult.CONTINUE;
 	},
 	

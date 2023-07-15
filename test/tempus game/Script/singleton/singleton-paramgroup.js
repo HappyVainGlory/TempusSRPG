@@ -123,6 +123,8 @@ var ParamGroup = {
 		
 		n = FusionControl.getLastValue(unit, index, n);
 		
+		n = MetamorphozeControl.getLastValue(unit, index, n);
+		
 		return n;
 	},
 	
@@ -343,18 +345,6 @@ UnitParameter.SPD = defineObject(BaseUnitParameter,
 	
 	getSignal: function() {
 		return 'spd';
-	}
-}
-);
-
-UnitParameter.SKI = defineObject(BaseUnitParameter,
-{
-	getParameterType: function() {
-		return ParamType.SKI;
-	},
-	
-	getSignal: function() {
-		return 'ski';
 	}
 }
 );

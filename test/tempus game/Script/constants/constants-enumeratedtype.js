@@ -1,20 +1,25 @@
 
 var SceneType = {
 	// Cannot use battle event command at the following scene.
-	TITLE : 0,
-	GAMEOVER : 1,
-	ENDING : 2,
-
-	// Can use battle event command at the following scene.
-	BATTLESETUP : 3,
-	FREE : 4,
-	BATTLERESULT : 5,
-	REST : 6,
+	TITLE: 0,
+	GAMEOVER: 1,
+	ENDING: 2,
 	
-	EVENTTEST : 9,
-
+	// Can use battle event command at the following scene.
+	BATTLESETUP: 3,
+	FREE: 4,
+	BATTLERESULT: 5,
+	REST: 6,
+	
+	EVENTTEST: 9,
+	
 	// Event command to enable to use depends on the caller's scene.
-	EVENT : 10	
+	EVENT: 10,
+	
+	// Any value between 20 and 50000 can be used as a custom scene.
+	CUSTOM: 20,
+	
+	RESERVED: 50000
 };
 
 //-----------------------------
@@ -91,7 +96,7 @@ var PatternType = {
 	WAIT: 1,
 	MOVE: 2,
 	CUSTOM: 100,
-	ESTIMATE:200
+	ESTIMATE: 200
 };
 
 var SkillType = {
@@ -509,6 +514,11 @@ var StealFlag = {
 	MULTI: 0x08
 };
 
+var QuickValue = {
+	ONE: 0,
+	SURROUNDINGS: 1
+};
+
 //-----------------------------
 
 var AnimeType = {
@@ -590,7 +600,8 @@ var MotionArcher = {
 	AVOID2: 4,
 	DAMAGE: 5,
 	FINISHDAMAGE: 6,
-	CRITICALFINISH: 7
+	CRITICALFINISH: 7,
+	BOW2: 8
 };
 
 var MotionMage = {
@@ -601,7 +612,8 @@ var MotionMage = {
 	AVOID2: 4,
 	DAMAGE: 5,
 	FINISHDAMAGE: 6,
-	CRITICALFINISH: 7
+	CRITICALFINISH: 7,
+	MAGIC2: 8
 };
 
 var InterpolationMode = {
@@ -633,7 +645,8 @@ var OverUnderType = {
 	EQUAL: 0,
 	OVER: 1,
 	UNDER: 2,
-	NONE: 3
+	NOTEQUALSTO: 3,
+	NONE: 4
 };
 
 var EffectRangeType = {
@@ -879,7 +892,8 @@ var DifficultyFlag = {
 	CRITICAL: 0x2,
 	INJURY: 0x4,
 	GROWTH: 0x8,
-	COUNTERATTACK: 0x20
+	COUNTERATTACK: 0x20,
+	NEWGAMEPLUS: 0x40
 };
 
 var ClassMotionFlag = {
@@ -938,6 +952,53 @@ var LanguageCode = {
 var GradientType = {
 	RADIAL: 0,
 	LINEAR: 1
+};
+
+//----------------------------
+
+var BlendMode = {
+	MULTIPLY: 0,
+	SCREEN: 1,
+	DARKEN: 2,
+	LIGHTEN: 3,
+	DISSOLVE: 4,
+	COLOR_BURN: 5,
+	LINEAR_BURN: 6,
+	DARKER_COLOR: 7,
+	LIGHTER_COLOR: 8,
+	COLOR_DODGE: 9,
+	LINEAR_DODGE: 10,
+	OVERLAY: 11,
+	SOFT_LIGHT: 12,
+	HARD_LIGHT: 13,
+	VIVID_LIGHT: 14,
+	LINEAR_LIGHT: 15,
+	PIN_LIGHT: 16,
+	HARD_MIX: 17,
+	DIFFERENCE: 18,
+	EXCLUSION: 19,
+	HUE: 20,
+	SATURATION: 21,
+	COLOR: 22,
+	LUMINOSITY: 23,
+	SUBTRACT: 24,
+	DIVISION: 25
+};
+
+var CompositeMode = {
+	SOURCE_OVER: 0,
+	DESTINATION_OVER: 1,
+	SOURCE_IN: 2,
+	DESTINATION_IN: 3,
+	SOURCE_OUT: 4,
+	DESTINATION_OUT: 5,
+	SOURCE_ATOP: 6,
+	DESTINATION_ATOP: 7,
+	XOR: 8,
+	PLUS: 9,
+	SOURCE_COPY: 10,
+	BOUNDED_SOURCE_COPY: 11,
+	MASK_INVERT: 12
 };
 
 //----------------------------

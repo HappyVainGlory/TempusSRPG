@@ -956,6 +956,13 @@ var ClearPointFlowEntry = defineObject(BaseFlowEntry,
 			return false;
 		}
 		
+		// root.getSceneController().initializeMetaSession is called in DifficultyFlowEntry, which is executed before ClearPointFlowEntry.
+		// This means that difficulty data is initialized within game.exe, so it can be retrieved with root.getMetaSession.
+		if (!(root.getMetaSession().getDifficulty().getDifficultyOption() & DifficultyFlag.NEWGAMEPLUS)) {
+			return false;
+		}
+		
+		// The game has been cleared if value is greater than 0.
 		return root.getExternalData().getGameClearPoint() > 0;
 	},
 	

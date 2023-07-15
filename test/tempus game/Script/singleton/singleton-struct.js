@@ -4,7 +4,8 @@ var ScreenBuilder = {
 		return {
 			isLoad: false,
 			scene: 0,
-			mapId: 0
+			mapId: 0,
+			customObject: {}
 		};
 	},
 	

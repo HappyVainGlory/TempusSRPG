@@ -226,9 +226,11 @@ var SkillControl = {
 	},
 	
 	getDirectSkillArray: function(unit, skilltype, keyword) {
-		var weapon = ItemControl.getEquippedWeapon(unit);
+		if (unit === null) {
+			return [];
+		}
 		
-		return this.getSkillMixArray(unit, weapon, skilltype, keyword);
+		return this.getSkillMixArray(unit, ItemControl.getEquippedWeapon(unit), skilltype, keyword);
 	},
 	
 	// If skilltype is -1, all skills associated with the unit are the target.
@@ -240,6 +242,10 @@ var SkillControl = {
 	
 	getSkillObjectArray: function(unit, weapon, skilltype, keyword, objectFlag) {
 		var arr = [];
+		
+		if (unit === null) {
+			return arr;
+		}
 		
 		this._pushObjectSkill(unit, weapon, arr, skilltype, keyword, objectFlag);
 		
@@ -374,6 +380,10 @@ var SkillControl = {
 		// If it's found, save the skill value at arr.
 		for (i = 0; i < count; i++) {
 			skill = list.getTypeData(i);
+			if (skill === null) {
+				// Null may be returned if unable to find skills when loading save files.
+				continue;
+			}
 			
 			isBuild = false;
 			if (skilltype === -1) {
@@ -489,7 +499,7 @@ var SkillChecker = {
 	
 	addNewSkill: function(unit, newSkill) {
 		// Check if it reaches the level to learn the skill.
-		if (unit.getLv() < newSkill.getLv()) {
+		if (this._isLevelDisabled(unit, newSkill)) {
 			return false;
 		}
 		
@@ -520,6 +530,10 @@ var SkillChecker = {
 		var list = unit.getSkillReferenceList();
 		
 		root.getDataEditor().changeSkillData(list, newSkill.getSkill(), newSkill.getOldSkill());
+	},
+	
+	_isLevelDisabled: function(unit, newSkill) {
+		return unit.getLv() < newSkill.getLv();
 	},
 	
 	_isSkillLearned: function(unit, skill) {

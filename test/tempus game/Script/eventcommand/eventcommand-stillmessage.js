@@ -53,7 +53,7 @@ var StillMessageEventCommand = defineObject(BaseEventCommand,
 		var eventCommandData = root.getEventCommandObject();
 		var messageViewParam = StructureBuilder.buildMessageViewParam();
 		
-		messageViewParam.messageLayout = root.getBaseData().getMessageLayoutList().getData(MessageLayout.STILL);
+		messageViewParam.messageLayout = this._getMessageLayout();
 		messageViewParam.text = eventCommandData.getText();
 		messageViewParam.pos = MessagePos.BOTTOM;
 		messageViewParam.speakerType = eventCommandData.getSpeakerType();
@@ -62,6 +62,10 @@ var StillMessageEventCommand = defineObject(BaseEventCommand,
 		messageViewParam.facialExpressionId = eventCommandData.getFacialExpressionId();
 		
 		return messageViewParam;
+	},
+	
+	_getMessageLayout: function() {
+		return root.getDefaultMessageLayout(MessageLayout.STILL);
 	}
 }
 );
